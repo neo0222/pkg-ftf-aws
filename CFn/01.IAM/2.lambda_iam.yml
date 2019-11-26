@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Mappings:
+  StackConfig:
+    ManagedPolicyArns:
+      AWSLambdaBasicExecutionRole: arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+Resources:
+  #-----------------------
+  # ポリシー作成
+  #-----------------------
+  ControlFoodDynamoDBTablePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: control-food-dynamodbtable
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Batch*
+              - dynamodb:Describe*
+              - dynamodb:Get*
+              - dynamodb:List*
+              - dynamodb:DeleteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MATERIAL_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MATERIAL_*/index/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/INGREDIENT_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/INGREDIENT_*/index/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/BASE_ITEM_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/BASE_ITEM_*/index/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/PRODUCT_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/PRODUCT_*/index/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/SEQUENCE_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/STOCK_*/index/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/STOCK_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FLOW_*/index/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FLOW_*"
+
+  #-----------------------
+  # ロールの作成
+  #-----------------------
+  RoleLambdaFoodDynamo:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: role-lambda-food-dynamo
+      ManagedPolicyArns:
+        - !FindInMap [StackConfig, ManagedPolicyArns, AWSLambdaBasicExecutionRole]
+        - !Ref ControlFoodDynamoDBTablePolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+
+#################################
+# Outputs
+#################################
+Outputs:
+  ControlFoodDynamoDBTablePolicyArn:
+    Value: ! Ref ControlFoodDynamoDBTablePolicy
+    Export:
+      Name: ControlFoodDynamoDBTablePolicyArn
+  
+  RoleLambdaFoodDynamoArn:
+    Value: GetAtt RoleLambdaFoodDynamo.Arn
+    Export:
+      Name: RoleLambdaFoodDynamoArn
