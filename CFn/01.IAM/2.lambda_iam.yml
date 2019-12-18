@@ -28,19 +28,14 @@ Resources:
               - dynamodb:Query
               - dynamodb:Scan
             Resource:
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MATERIAL_*"
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MATERIAL_*/index/*"
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/INGREDIENT_*"
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/INGREDIENT_*/index/*"
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/BASE_ITEM_*"
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/BASE_ITEM_*/index/*"
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/PRODUCT_*"
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/PRODUCT_*/index/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FOOD_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FOOD_*/index/*"
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/SEQUENCE_*"
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/STOCK_*/index/*"
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/STOCK_*"
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FLOW_*/index/*"
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FLOW_*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/WHOLESALER_*"
 
   #-----------------------
   # ロールの作成
