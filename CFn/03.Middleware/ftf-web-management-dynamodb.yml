@@ -213,3 +213,53 @@ Resources:
                 PointInTimeRecoveryEnabled: true
             SSESpecification:
                 SSEEnabled: true
+
+    #----------------------------------------------
+    # SHOP:SHOP*
+    #----------------------------------------------
+    SHOP:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            KeySchema:
+                - AttributeName: shop_name
+                  KeyType: HASH
+            AttributeDefinitions:
+                - AttributeName: shop_name
+                  AttributeType: S
+            TableName:
+                !Join [
+                    "_",
+                    ["SHOP", !Ref NameTag],
+            ]
+            BillingMode: PAY_PER_REQUEST
+            PointInTimeRecoverySpecification:
+                PointInTimeRecoveryEnabled: true
+            SSESpecification:
+                SSEEnabled: true
+
+    #----------------------------------------------
+    # BUSINESS_DATE:BUSINESS_DATE_*
+    #----------------------------------------------
+    BUSINESSDATE:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            KeySchema:
+                - AttributeName: shop_name
+                  KeyType: HASH
+                - AttributeName: date
+                  KeyType: RANGE
+            AttributeDefinitions:
+                - AttributeName: shop_name
+                  AttributeType: S
+                - AttributeName: date
+                  AttributeType: S
+            TableName:
+                !Join [
+                    "_",
+                    ["BUSINESS_DATE", !Ref NameTag],
+            ]
+            BillingMode: PAY_PER_REQUEST
+            PointInTimeRecoverySpecification:
+                PointInTimeRecoveryEnabled: true
+            SSESpecification:
+                SSEEnabled: true
