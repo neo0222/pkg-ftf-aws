@@ -37,6 +37,9 @@ Resources:
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FLOW_*"
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/WHOLESALER_*"
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/HOLIDAY*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/SHOP*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/BUSINESS_DATE*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/BUSINESS_DATE_*/index/*"
 
   #-----------------------
   # ロールの作成
