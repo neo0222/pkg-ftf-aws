@@ -253,6 +253,17 @@ Resources:
                   AttributeType: S
                 - AttributeName: date
                   AttributeType: S
+                - AttributeName: day
+                  AttributeType: N
+            GlobalSecondaryIndexes:
+                - IndexName: shop_name-day-index
+                  KeySchema:
+                      - AttributeName: shop_name
+                        KeyType: HASH
+                      - AttributeName: day
+                        KeyType: RANGE
+                  Projection:
+                      ProjectionType: ALL
             TableName:
                 !Join [
                     "_",
