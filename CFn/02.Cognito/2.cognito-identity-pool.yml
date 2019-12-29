@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Cognito User Pool
+
+######################################################
+# Parameters:
+######################################################
+Parameters:
+  EnvName:
+    Type: String
+    Default: it1
+    AllowedValues:
+      - it1
+      - it2
+      - it3
+      - it4
+      - it5
+      - stg1
+      - stg2
+      - prod
+    Description: Enter profile.
+
+######################################################
+# Mappings
+######################################################
+Mappings:
+  StackConfig:
+    NameTag:
+      Value: ftf-web-management
+
+######################################################
+# Resources
+######################################################
+Resources:
+  FtfWebManagementCognitoIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !ImportValue
+            Fn::Sub:
+              - ${NameTag}-app-client-${EnvName}
+              - {
+                NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+                EnvName: !Ref EnvName
+              }
+          ProviderName: !ImportValue
+            Fn::Sub:
+              - ${NameTag}-userpool-provider-name-${EnvName}
+              - {
+                NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+                EnvName: !Ref EnvName
+              }
+      IdentityPoolName: !Sub
+        - ${NameTag}-identity-pool-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }

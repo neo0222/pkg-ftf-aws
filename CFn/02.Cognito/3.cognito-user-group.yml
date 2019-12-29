@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Cognito User Group
+
+######################################################
+# Parameters:
+######################################################
+Parameters:
+  EnvName:
+    Type: String
+    Default: it1
+    AllowedValues:
+      - it1
+      - it2
+      - it3
+      - it4
+      - it5
+      - stg1
+      - stg2
+      - prod
+    Description: Enter profile.
+
+######################################################
+# Mappings
+######################################################
+Mappings:
+  StackConfig:
+    NameTag:
+      Value: ftf-web-management
+
+######################################################
+# Resources
+######################################################
+Resources:
+  FtfWebManagementUserPoolGroupAdministrator:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Administrator
+      UserPoolId: !ImportValue
+        Fn::Sub:
+          - ${NameTag}-userpool-id-${EnvName}
+          - {
+            NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+            EnvName: !Ref EnvName
+          }
+  FtfWebManagementUserPoolGroupOwner:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Owner
+      UserPoolId: !ImportValue
+        Fn::Sub:
+          - ${NameTag}-userpool-id-${EnvName}
+          - {
+            NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+            EnvName: !Ref EnvName
+          }
+
+  FtfWebManagementUserPoolGroupStockManager:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: StockManager
+      UserPoolId: !ImportValue
+        Fn::Sub:
+          - ${NameTag}-userpool-id-${EnvName}
+          - {
+            NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+            EnvName: !Ref EnvName
+          }
+
+  FtfWebManagementUserPoolGroupSalesRecorder:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: SalesRecorder
+      UserPoolId: !ImportValue
+        Fn::Sub:
+          - ${NameTag}-userpool-id-${EnvName}
+          - {
+            NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+            EnvName: !Ref EnvName
+          }
+  FtfWebManagementUserPoolGroupDeveloper:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Developer
+      UserPoolId: !ImportValue
+        Fn::Sub:
+          - ${NameTag}-userpool-id-${EnvName}
+          - {
+            NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+            EnvName: !Ref EnvName
+          }

@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Cognito User Pool
+
+######################################################
+# Parameters:
+######################################################
+Parameters:
+  EnvName:
+    Type: String
+    Default: it1
+    AllowedValues:
+      - it1
+      - it2
+      - it3
+      - it4
+      - it5
+      - stg1
+      - stg2
+      - prod
+    Description: Enter profile.
+
+######################################################
+# Mappings
+######################################################
+Mappings:
+  StackConfig:
+    NameTag:
+      Value: ftf-web-management
+
+######################################################
+# Resources
+######################################################
+Resources:
+  FtfWebManagemenCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AliasAttributes:
+        - email
+        - preferred_username
+      UserPoolName: !Sub
+        - ${NameTag}-userpool-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  FtfWebManagementUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+        ClientName: !Sub
+          - ${NameTag}-${EnvName}
+          - {
+            NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+            EnvName: !Ref EnvName
+          }
+        GenerateSecret: false
+        ExplicitAuthFlows:
+          - ALLOW_USER_SRP_AUTH
+          - ALLOW_CUSTOM_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        ReadAttributes:
+          - nickname
+          - email
+          - name
+        RefreshTokenValidity: 30
+        UserPoolId: !Ref FtfWebManagemenCognitoUserPool
+        WriteAttributes:
+          - nickname
+          - email
+          - name
+
+Outputs:
+  FtfWebManagementUserPoolId:
+    Value: !Ref FtfWebManagemenCognitoUserPool
+    Export:
+      Name: !Sub
+        - ${NameTag}-userpool-id-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  FtfWebManagementUserPoolProviderName:
+    Value: !GetAtt FtfWebManagemenCognitoUserPool.ProviderName
+    Export:
+      Name: !Sub
+        - ${NameTag}-userpool-provider-name-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+  
+  FtfWebManagementUserPoolArn:
+    Value: !GetAtt FtfWebManagemenCognitoUserPool.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-userpool-arn-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  FtfWebManagementAppClientId:
+    Value: !Ref FtfWebManagementUserPoolClient
+    Export:
+      Name: !Sub
+        - ${NameTag}-app-client-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
