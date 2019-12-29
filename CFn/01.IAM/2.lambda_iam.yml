@@ -64,11 +64,11 @@ Resources:
 #################################
 Outputs:
   ControlFoodDynamoDBTablePolicyArn:
-    Value: ! Ref ControlFoodDynamoDBTablePolicy
+    Value: !Ref ControlFoodDynamoDBTablePolicy
     Export:
       Name: ControlFoodDynamoDBTablePolicyArn
   
   RoleLambdaFoodDynamoArn:
-    Value: GetAtt RoleLambdaFoodDynamo.Arn
+    Value: !GetAtt RoleLambdaFoodDynamo.Arn
     Export:
       Name: RoleLambdaFoodDynamoArn
