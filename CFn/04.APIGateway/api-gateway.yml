@@ -1,0 +1,827 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  API Gateway
+
+######################################################
+# Parameters:
+######################################################
+Parameters:
+  EnvName:
+    Type: String
+    Default: it1
+    AllowedValues:
+      - it1
+      - it2
+      - it3
+      - it4
+      - it5
+      - stg1
+      - stg2
+      - prod
+    Description: Enter profile.
+  NameTag:
+    Type: String
+    Default: ftf-web-management
+    AllowedValues:
+      - ftf-web-management
+
+######################################################
+# Mappings
+######################################################
+Mappings:
+  StackConfig:
+    NameTag:
+      Value: ftf-web-management
+
+######################################################
+# Resources
+######################################################
+Resources:
+  ######################################################
+  # Rest API
+  ######################################################
+  FtfWebManagementRestAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 
+        - ${NameTag}-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value],
+          EnvName: !Ref EnvName
+        }
+      EndpointConfiguration:
+        Types:
+          - EDGE
+
+  ######################################################
+  # API Authorizer
+  ######################################################
+  FtfWebManagementAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ProviderARNs: 
+        - !ImportValue
+            Fn::Sub:
+              - ${NameTag}-userpool-arn-${EnvName}
+              - {
+                NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+                EnvName: !Ref EnvName
+              }
+      IdentitySource: method.request.header.Authorization
+      Name: !Sub 
+        - ${NameTag}-Authorizer-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value],
+          EnvName: !Ref EnvName
+        }
+      Type: COGNITO_USER_POOLS
+    DependsOn: FtfWebManagementRestAPI
+
+  ######################################################
+  # Material
+  #   - Resource
+  #     - path: /material
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  MaterialResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: material
+    DependsOn: FtfWebManagementAuthorizer
+
+  MaterialPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref MaterialResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${MaterialRegistererArn}/invocations
+          - {
+            MaterialRegistererArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-MaterialRegisterer-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaMaterialRegistererPermission
+
+  MaterialOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: MaterialResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: MaterialResource
+
+  LambdaMaterialRegistererPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-MaterialRegisterer-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
+  # Ingredient
+  #   - Resource
+  #     - path: /ingredient
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  IngredientResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: ingredient
+    DependsOn: FtfWebManagementAuthorizer
+
+  IngredientPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref IngredientResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${IngredientRegistererArn}/invocations
+          - {
+            IngredientRegistererArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-IngredientRegisterer-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaIngredientRegistererPermission
+
+  IngredientOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: IngredientResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: IngredientResource
+
+  LambdaIngredientRegistererPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-IngredientRegisterer-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
+  # BaseItem
+  #   - Resource
+  #     - path: /base-item
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  BaseItemResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: base-item
+    DependsOn: FtfWebManagementAuthorizer
+
+  BaseItemPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref BaseItemResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${BaseItemRegistererArn}/invocations
+          - {
+            BaseItemRegistererArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-BaseItemRegisterer-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaBaseItemRegistererPermission
+
+  BaseItemOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: BaseItemResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: BaseItemResource
+
+  LambdaBaseItemRegistererPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-BaseItemRegisterer-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
+  # Product
+  #   - Resource
+  #     - path: /product
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  ProductResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: product
+    DependsOn: FtfWebManagementAuthorizer
+
+  ProductPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${ProductRegistererArn}/invocations
+          - {
+            ProductRegistererArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-ProductRegisterer-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaProducRegistererPermission
+
+  ProductOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: ProductResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: ProductResource
+
+  LambdaProducRegistererPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-ProductRegisterer-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
+  # Retrieve Food
+  #   - Resource
+  #     - path: /retrieve-food
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  RetrieveFoodResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: retrieve-food
+    DependsOn: FtfWebManagementAuthorizer
+
+  RetrieveFoodPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref RetrieveFoodResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${FoodRetrieverArn}/invocations
+          - {
+            FoodRetrieverArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-FoodRetriever-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaFoodRetrieverPermission
+
+  RetrieveFoodOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: RetrieveFoodResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: RetrieveFoodResource
+
+  LambdaFoodRetrieverPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-FoodRetriever-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
+  # Stock
+  #   - Resource
+  #     - path: /stock
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  StockResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: stock
+    DependsOn: FtfWebManagementAuthorizer
+
+  StockPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref StockResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${StockHandlerArn}/invocations
+          - {
+            StockHandlerArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-StockHandler-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaStockHandlerPermission
+
+  StockOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: StockResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: StockResource
+
+  LambdaStockHandlerPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-StockHandler-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
+  # Flow
+  #   - Resource
+  #     - path: /flow
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  FlowResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: flow
+    DependsOn: FtfWebManagementAuthorizer
+
+  FlowPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref FlowResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${FlowHandlerArn}/invocations
+          - {
+            FlowHandlerArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-FlowHandler-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaFlowHandlerPermission
+
+  FlowOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: FlowResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: FlowResource
+
+  LambdaFlowHandlerPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-FlowHandler-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
+  # Wholesaler
+  #   - Resource
+  #     - path: /wholesaler
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  WholesalerResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: wholsaler
+    DependsOn: FtfWebManagementAuthorizer
+
+  WholesalerPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref WholesalerResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${WholesalerRegistererArn}/invocations
+          - {
+            WholesalerRegistererArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-WholesalerRegisterer-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaWholesalerRegistererPermission
+
+  WholesalerOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: WholesalerResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: WholesalerResource
+
+  LambdaWholesalerRegistererPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-WholesalerRegisterer-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+
+    
