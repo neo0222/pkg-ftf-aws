@@ -1,0 +1,371 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS Lambda
+
+######################################################
+# Parameters:
+######################################################
+Parameters:
+  EnvName:
+    Type: String
+    Default: it1
+    AllowedValues:
+      - it1
+      - it2
+      - it3
+      - it4
+      - it5
+      - stg1
+      - stg2
+      - prod
+    Description: Enter profile.
+  ObjectKeyPrefix:
+    Type: String
+    Default: 20191229
+
+######################################################
+# Mappings
+######################################################
+Mappings:
+  StackConfig:
+    NameTag:
+      Value: ftf-web-management
+
+######################################################
+# Resources
+######################################################
+Resources:
+  LambdaBaseItemRegisterer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/BaseItemRegisterer/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - BaseItemRegisterer-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaBusinessDateHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/BusinessDateHandler/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - BusinessDateHandler-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaFlowHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/FlowHandler/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - FlowHandler-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaFoodRetriever:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/FoodRetriever/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - FoodRetriever-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaIngredientRegisterer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/IngredientRegisterer/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - IngredientRegisterer-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaMaterialRegisterer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/MaterialRegisterer/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - MaterialRegisterer-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaProductRegisterer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/ProductRegisterer/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - ProductRegisterer-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaStockHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/StockHandler/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - StockHandler-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+  LambdaWholesalerRegisterer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/WholesalerRegisterer/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - WholesalerRegisterer-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
+Outputs:
+  LambdaBaseItemRegistererArn:
+    Value: !GetAtt LambdaBaseItemRegisterer.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-BaseItemRegisterer-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaBusinessDateHandlerArn:
+    Value: !GetAtt LambdaBusinessDateHandler.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-BusinessDateHandler-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaFlowHandlerArn:
+    Value: !GetAtt LambdaFlowHandler.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-FlowHandler-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaFoodRetrieverArn:
+    Value: !GetAtt LambdaFoodRetriever.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-FoodRetriever-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaIngredientRegistererArn:
+    Value: !GetAtt LambdaIngredientRegisterer.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-IngredientRegisterer-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaMaterialRegistererArn:
+    Value: !GetAtt LambdaMaterialRegisterer.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-MaterialRegisterer-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaProductRegistererArn:
+    Value: !GetAtt LambdaProductRegisterer.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-ProductRegisterer-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaStockHandlerArn:
+    Value: !GetAtt LambdaStockHandler.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-StockHandler-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaWholesalerRegistererArn:
+    Value: !GetAtt LambdaWholesalerRegisterer.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-WholesalerRegisterer-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }

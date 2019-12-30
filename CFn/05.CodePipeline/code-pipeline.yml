@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    CodePipeline for deployment of Client.
+
+######################################################
+# Parameters:
+######################################################
+Parameters:
+  EnvName:
+    Type: String
+    Default: it1
+    AllowedValues:
+        - it1
+        - it2
+        - it3
+        - it4
+        - it5
+        - stg1
+        - stg2
+        - prod
+    Description: Enter profile.
+  GitHubRepoName:
+    Type: String
+    Default: pkg-ftf-web-management
+  GitHubBranchName:
+    Type: String
+    Default: dev
+  S3Bucket:
+    Type: String
+    Default: management-it1.ftf-web-service.com
+  NameTag:
+    Type: String
+    Default: ftf-web-management
+    AllowedValues:
+      - ftf-web-management
+
+######################################################
+# Mappings
+######################################################
+Mappings:
+  StackConfig:
+    NameTag:
+      Value: ftf-web-management
+
+######################################################
+# Resources
+######################################################
+Resources:
+  CodeBuildBasePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${NameTag}-${EnvName}-build
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${NameTag}-${EnvName}-build:*
+          - Effect: Allow
+            Resource:
+              - !Sub arn:aws:s3:::codepipeline-${AWS::Region}-*
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:GetBucketAcl
+              - s3:GetBucketLocation
+
+  RoleCodeBuildService:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: role-codebuild
+      ManagedPolicyArns:
+        - !Ref CodeBuildBasePolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: codebuild.amazonaws.com
+
+  FtfWebManagementBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: ENVIRONMENT_NAME
+            Value: !Ref EnvName
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/standard:2.0-1.13.0
+      ServiceRole: !GetAtt RoleCodeBuildService.Arn
+      Name: !Sub
+        - ${NameTag}-${EnvName}-build
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+      Source:
+        Type: CODEPIPELINE
+        
+  FtfWebManagementPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub
+        - ${NameTag}-${EnvName}
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+      ArtifactStore:
+        Type: S3
+        Location: codepipeline-ap-northeast-1-299374294168
+      RoleArn: arn:aws:iam::010660485109:role/service-role/AWSCodePipelineServiceRole-ap-northeast-1-pkg-ftf-web-managemen
+      RestartExecutionOnUpdate: false
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version : 1
+              Configuration:
+                Owner: neo0222
+                Repo: !Ref GitHubRepoName
+                Branch: !Ref GitHubBranchName
+                OAuthToken: 7676070c831b189884f66c924db584bc45a31773 #GitHubでPersonal Access Tokenを発行する。
+                PollForSourceChanges: true
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Region: ap-northeast-1
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref FtfWebManagementBuildProject
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              Configuration:
+                BucketName: !Ref S3Bucket
+                Extract: true
+              InputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
