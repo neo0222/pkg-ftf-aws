@@ -47,6 +47,14 @@ Resources:
           NameTag: !FindInMap [ StackConfig, NameTag, Value ],
           EnvName: !Ref EnvName
         }
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: false
+          TemporaryPasswordValidityDays: 7
 
   FtfWebManagementUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
