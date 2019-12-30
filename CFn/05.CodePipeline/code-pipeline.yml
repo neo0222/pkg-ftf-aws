@@ -137,7 +137,7 @@ Resources:
                 Repo: !Ref GitHubRepoName
                 Branch: !Ref GitHubBranchName
                 OAuthToken: 7676070c831b189884f66c924db584bc45a31773 #GitHubでPersonal Access Tokenを発行する。
-                PollForSourceChanges: false
+                PollForSourceChanges: true
               OutputArtifacts:
                 - Name: SourceArtifact
               Region: ap-northeast-1
