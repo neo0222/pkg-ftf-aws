@@ -13,17 +13,23 @@
 #### 1.cognito-user-pool.yml
 - Cognitoのユーザプールとアプリクライアントを作成する。
 - パラメータとして環境名を選択し、流す。
-Cognitoマネジメントコンソールから、作成が成功したことを確認する。
+- スタック作成後、出力にて下記項目の値をメモしておく。
+    - FtfWebManagementAppClientId
+    - FtfWebManagementUserPoolId
+- Cognitoマネジメントコンソールから、作成が成功したことを確認する。
 
 #### 2.cognito-identity-pool.yml
 - 1.で作成したユーザプールにひもづくアイデンティティプールを作成する。
 - パラメータとして環境名を選択し、流す。
 - Cognitoマネジメントコンソールから、作成が成功したことを確認する。
+- スタック作成後、出力にて下記項目の値をメモしておく。
+    - CognitoIdentityPoolId
 
 #### 3.cognito-user-group.yml
 - 1.で作成したユーザプールのユーザグループを作成する。
 - Cognitoマネジメントコンソールから、下記のグループが作成されたことを確認する。
     - Administrator
+    - Developer
     - Owner
     - StockManager
     - SalesRecorder
@@ -51,11 +57,27 @@ Cognitoマネジメントコンソールから、作成が成功したことを�
 #### 2.api-gateway.yml
 - API Gatewayをデプロイする。
 - スタック作成後に、API GatewayマネジメントコンソールからAPIのデプロイを選択し、完了。
+- 左サイドメニューのステージを選択肢、invocation urlをメモしておく。
+
+### pkg-ftf-web-managementに新規環境面の設定ファイルを追加する
+- [IT1面追加時のPR](https://github.com/neo0222/pkg-ftf-web-management/pull/14)を参考にしながら、新規環境面に対応できるよう修正を行う。
+
+#### src/environment下のファイル設定
+|項目名|値|
+|---:|---|
+|Region|ap-northeast-1|
+|UserPoolId|FtfWebManagementUserPoolId(メモした値)|
+|ClientId|FtfWebManagementAppClientId(メモした値)|
+|IdentityPoolId|CognitoIdentityPoolId(メモした値)|
+|InvokeUrl|API Gatewayデプロイ時にメモしたurl|
+
+- PRを作成し、マージする。
 
 ### 05.CodePipeline
 #### code-pipeline.yml
 - 画面モジュールをデプロイするためのCodePipelineを作成する。
 - 環境名、デプロイ先S3バケット名を正しく選択し、スタックを作成する。
+- CodePipelineマネジメントコンソールから、デプロイが成功することを確認する。
 
 ### 06.CloudFront
 #### cloudfront.yml
