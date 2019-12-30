@@ -59,15 +59,101 @@ Resources:
           NameTagJoinedWithWhitespace: !FindInMap [ StackConfig, NameTagJoinedWithWhitespace, Value ],
           EnvName: !Ref EnvName
         }
+  #-----------------------
+  # ポリシー作成
+  #-----------------------
+  CognitoAuthenticatedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: authenticated policy for cognito identity pool
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - mobileanalytics:PutEvents
+              - cognito-sync:*
+              - cognito-identity:*
+            Resource:
+              - "*"
+
+  CognitoUnauthenticatedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: unauthenticated policy for cognito identity pool
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - mobileanalytics:PutEvents
+              - cognito-sync:*
+            Resource:
+              - "*"
+  #-----------------------
+  # ロールの作成
+  #-----------------------
+  RoleCognitoAuthenticated:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub
+        - role-cognito-authenticated-${EnvName}
+        - {
+          EnvName: !Ref EnvName
+        }
+      ManagedPolicyArns:
+        - !Ref CognitoAuthenticatedPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref FtfWebManagementCognitoIdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
+
+  RoleCognitoUnauthenticated:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 
+        - role-cognito-unauthenticated-${EnvName}
+        - {
+          EnvName: !Ref EnvName
+        }
+      ManagedPolicyArns:
+        - !Ref CognitoUnauthenticatedPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref FtfWebManagementCognitoIdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: unauthenticated
+  
+  CognitoIdentityPoolRoleAttachment:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref FtfWebManagementCognitoIdentityPool
+      Roles:
+        authenticated: !GetAtt RoleCognitoAuthenticated.Arn
+        unauthenticated: !GetAtt RoleCognitoUnauthenticated.Arn
+
+Outputs:
+  CognitoIdentityPoolId:
+    Value: !Ref FtfWebManagementCognitoIdentityPool
+    Export:
+      Name: !Sub
+        - ${NameTag}-identity-pool-id-${EnvName}
         - {
           NameTag: !FindInMap [ StackConfig, NameTag, Value ],
           EnvName: !Ref EnvName
         }
-      Policies:
-        PasswordPolicies:
-          MinimumLength: 8
-          RequireLowercase: true
-          RequireNumbers: true
-          RequireSymbols: false
-          RequireUppercase: false
-          TemporaryPasswordValidityDays: 7
