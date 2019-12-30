@@ -27,6 +27,8 @@ Mappings:
   StackConfig:
     NameTag:
       Value: ftf-web-management
+    NameTagJoinedWithWhitespace:
+      Value: ftf web management
 
 ######################################################
 # Resources
@@ -52,7 +54,11 @@ Resources:
                 EnvName: !Ref EnvName
               }
       IdentityPoolName: !Sub
-        - ${NameTag}-identity-pool-${EnvName}
+        - ${NameTagJoinedWithWhitespace} identity pool ${EnvName}
+        - {
+          NameTagJoinedWithWhitespace: !FindInMap [ StackConfig, NameTagJoinedWithWhitespace, Value ],
+          EnvName: !Ref EnvName
+        }
         - {
           NameTag: !FindInMap [ StackConfig, NameTag, Value ],
           EnvName: !Ref EnvName
