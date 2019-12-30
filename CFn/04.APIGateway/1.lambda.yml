@@ -51,7 +51,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - BaseItemRegisterer-${EnvName}
           - {
@@ -78,7 +78,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - BusinessDateHandler-${EnvName}
           - {
@@ -105,7 +105,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - FlowHandler-${EnvName}
           - {
@@ -132,7 +132,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - FoodRetriever-${EnvName}
           - {
@@ -159,7 +159,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - IngredientRegisterer-${EnvName}
           - {
@@ -186,7 +186,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - MaterialRegisterer-${EnvName}
           - {
@@ -213,7 +213,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - ProductRegisterer-${EnvName}
           - {
@@ -240,7 +240,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - StockHandler-${EnvName}
           - {
@@ -267,7 +267,7 @@ Resources:
           }
       Environment:
         Variables:
-          ENVIROMENT : !Ref EnvName
+          ENVIRONMENT : !Ref EnvName
       FunctionName: !Sub
           - WholesalerRegisterer-${EnvName}
           - {
