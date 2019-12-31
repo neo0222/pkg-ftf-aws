@@ -545,6 +545,99 @@ Resources:
       Principal: apigateway.amazonaws.com
 
   ######################################################
+  # Shop
+  #   - Resource
+  #     - path: /shop
+  #   - Method
+  #     - POST
+  #     - OPTION(for enable CORS)
+  #   - Lambda Permission
+  ######################################################
+  ShopResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FtfWebManagementRestAPI
+      ParentId: !GetAtt
+        - FtfWebManagementRestAPI
+        - RootResourceId
+      PathPart: shop
+    DependsOn: FtfWebManagementAuthorizer
+
+  ShopPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref FtfWebManagementAuthorizer
+      HttpMethod: POST
+      ResourceId: !Ref ShopResource
+      RestApiId: !Ref FtfWebManagementRestAPI
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin" : true
+      Integration:
+        Type: AWS
+        Uri: !Sub
+          - arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${ShopHandlerArn}/invocations
+          - {
+            ShopHandlerArn: {
+              'Fn::ImportValue':
+                !Sub "${NameTag}-ShopHandler-${EnvName}-arn"
+            }
+          }
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              'method.response.header.Access-Control-Allow-Origin' : "'*'" # 中身を一重引用符で囲う
+    DependsOn: LambdaShopHandlerPermission
+
+  ShopOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: FtfWebManagementRestAPI
+      ResourceId:
+        Ref: ShopResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+    DependsOn: ShopResource
+
+  LambdaShopHandlerPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue
+        Fn::Sub: 
+          - ${NameTag}-ShopHandler-${EnvName}-arn
+          - {
+              NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+              EnvName: !Ref EnvName
+            }
+      Principal: apigateway.amazonaws.com
+
+  ######################################################
   # Stock
   #   - Resource
   #     - path: /stock
