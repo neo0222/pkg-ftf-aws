@@ -225,6 +225,33 @@ Resources:
       Runtime: nodejs10.x
       Timeout: 900
 
+  LambdaShopHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/ShopHandler/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - ShopHandler-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
   LambdaStockHandler:
     Type: AWS::Lambda::Function
     Properties:
@@ -345,6 +372,16 @@ Outputs:
     Export:
       Name: !Sub
         - ${NameTag}-ProductRegisterer-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaShopHandlerArn:
+    Value: !GetAtt LambdaShopHandler.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-ShopHandler-${EnvName}-arn
         - {
           NameTag: !FindInMap [ StackConfig, NameTag, Value ],
           EnvName: !Ref EnvName

@@ -74,6 +74,7 @@ Resources:
               - mobileanalytics:PutEvents
               - cognito-sync:*
               - cognito-identity:*
+              - cognito-idp:*
             Resource:
               - "*"
 
