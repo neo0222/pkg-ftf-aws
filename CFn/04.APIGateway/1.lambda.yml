@@ -23,6 +23,9 @@ Parameters:
   ObjectKeyPrefix:
     Type: String
     Default: 20191229
+  BusinessDateHandlerDateThreshold:
+    Type: Number
+    Default: 120
 
 ######################################################
 # Mappings
@@ -79,6 +82,7 @@ Resources:
       Environment:
         Variables:
           ENVIRONMENT : !Ref EnvName
+          DATE_THRESHOLD: !Ref BusinessDateHandlerDateThreshold
       FunctionName: !Sub
           - BusinessDateHandler-${EnvName}
           - {
