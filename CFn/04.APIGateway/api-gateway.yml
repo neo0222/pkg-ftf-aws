@@ -839,7 +839,7 @@ Resources:
       ParentId: !GetAtt
         - FtfWebManagementRestAPI
         - RootResourceId
-      PathPart: wholsaler
+      PathPart: wholesaler
     DependsOn: FtfWebManagementAuthorizer
 
   WholesalerPostMethod:
