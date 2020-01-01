@@ -26,6 +26,8 @@ Parameters:
   GitHubBranchName:
     Type: String
     Default: dev
+  GitHubOAuthToken:
+    Type: String
   S3Bucket:
     Type: String
     Default: management-it1.ftf-web-service.com
@@ -74,7 +76,7 @@ Resources:
   RoleCodeBuildService:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: role-codebuild
+      RoleName: !Sub role-${NameTag}-codebuild-${EnvName}
       ManagedPolicyArns:
         - !Ref CodeBuildBasePolicy
       AssumeRolePolicyDocument:
@@ -108,7 +110,45 @@ Resources:
         }
       Source:
         Type: CODEPIPELINE
-        
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub role-${NameTag}-code-pipeline-${EnvName}
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SamplePipelinePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - !Sub arn:aws:s3:::${S3Bucket}/*
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - codecommit:*
+                  - codedeploy:*
+                  - codebuild:*
+                  - s3:*
+                  - ecs:*
+                  - elasticloadbalancing:*
+                  - autoscaling:*
+                  - iam:PassRole
+
   FtfWebManagementPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -121,7 +161,7 @@ Resources:
       ArtifactStore:
         Type: S3
         Location: codepipeline-ap-northeast-1-299374294168
-      RoleArn: arn:aws:iam::010660485109:role/service-role/AWSCodePipelineServiceRole-ap-northeast-1-pkg-ftf-web-managemen
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
       RestartExecutionOnUpdate: false
       Stages:
         - Name: Source
@@ -136,7 +176,7 @@ Resources:
                 Owner: neo0222
                 Repo: !Ref GitHubRepoName
                 Branch: !Ref GitHubBranchName
-                OAuthToken: 7676070c831b189884f66c924db584bc45a31773 #GitHubでPersonal Access Tokenを発行する。
+                OAuthToken: !Ref GitHubOAuthToken #GitHubでPersonal Access Tokenを発行する。
                 PollForSourceChanges: true
               OutputArtifacts:
                 - Name: SourceArtifact
