@@ -202,6 +202,33 @@ Resources:
       Runtime: nodejs10.x
       Timeout: 900
 
+  LambdaOrderHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub
+          - ${NameTag}-lambda
+          - NameTag: !FindInMap [ StackConfig, NameTag, Value ]
+        S3Key: !Sub
+          - ${ObjectKeyPrefix}/OrderHandler/Deploy.zip
+          - {
+            ObjectKeyPrefix: !Ref ObjectKeyPrefix,
+            EnvName: !Ref EnvName
+          }
+      Environment:
+        Variables:
+          ENVIRONMENT : !Ref EnvName
+      FunctionName: !Sub
+          - OrderHandler-${EnvName}
+          - {
+            EnvName: !Ref EnvName
+          }
+      Handler: index.handler
+      ReservedConcurrentExecutions: 1
+      Role: !ImportValue RoleLambdaFoodDynamoArn
+      Runtime: nodejs10.x
+      Timeout: 900
+
   LambdaProductRegisterer:
     Type: AWS::Lambda::Function
     Properties:
@@ -366,6 +393,16 @@ Outputs:
     Export:
       Name: !Sub
         - ${NameTag}-MaterialRegisterer-${EnvName}-arn
+        - {
+          NameTag: !FindInMap [ StackConfig, NameTag, Value ],
+          EnvName: !Ref EnvName
+        }
+
+  LambdaOrderHandlerArn:
+    Value: !GetAtt LambdaOrderHandler.Arn
+    Export:
+      Name: !Sub
+        - ${NameTag}-OrderHandler-${EnvName}-arn
         - {
           NameTag: !FindInMap [ StackConfig, NameTag, Value ],
           EnvName: !Ref EnvName

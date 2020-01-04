@@ -274,3 +274,30 @@ Resources:
                 PointInTimeRecoveryEnabled: true
             SSESpecification:
                 SSEEnabled: true
+
+    #----------------------------------------------
+    # ORDER:ORDER_*
+    #----------------------------------------------
+    ORDER:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            KeySchema:
+                - AttributeName: shop_name
+                  KeyType: HASH
+                - AttributeName: date
+                  KeyType: RANGE
+            AttributeDefinitions:
+                - AttributeName: shop_name
+                  AttributeType: S
+                - AttributeName: date
+                  AttributeType: S
+            TableName:
+                !Join [
+                    "_",
+                    ["ORDER", !Ref NameTag],
+            ]
+            BillingMode: PAY_PER_REQUEST
+            PointInTimeRecoverySpecification:
+                PointInTimeRecoveryEnabled: true
+            SSESpecification:
+                SSEEnabled: true
